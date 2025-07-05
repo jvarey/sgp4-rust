@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::constants::*;
 use crate::utils::*;
 
@@ -143,15 +145,7 @@ impl SGP4 {
     ///         r_init (np.ndarray): Initial position vector in TEME frame in km
     ///         v_init (np.ndarray): Initial velocity vector in TEME frame in km/s
     ///
-    pub fn twoline2rv(
-        mut self,
-        tle_line1: String,
-        tle_line2: String,
-        typerun: TypeRun,
-        start: Option<f64>,
-        stop: Option<f64>,
-        step: Option<f64>,
-    ) -> (f64, f64, f64, [f64; 3], [f64; 3]) {
+    pub fn twoline2rv(mut self, tle_line1: String, tle_line2: String) -> ([f64; 3], [f64; 3]) {
         let xpdotp = DAY2MIN / TWOPI;
 
         // pre-process the TLE lines
@@ -196,5 +190,11 @@ impl SGP4 {
         // compute julian date of the epoch
         let mdhms = days2mdh(year, self.satrec.epochdays);
         (self.satrec.jdsatepoch, self.satrec.jdsatepochf) = jday(year, mdhms);
+
+        // initialize SGP4
+        epoch = self.satrec.jdsatepoch + self.satrec.jdsatepochf - JD_EPOCH_1950;
+        let (r_init, v_init) = self.sgp4init(epoch);
+
+        (r_init, v_init)
     }
 }
